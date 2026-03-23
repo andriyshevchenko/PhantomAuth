@@ -24,7 +24,7 @@
     "url": "https://github.com/andriyshevchenko/PhantomAuth.git"
   },
   "bin": {
-    "phantomauth": "./index.js"
+    "phantomauth": "./cli.js"
   },
   "main": "index.js",
   "engines": {
