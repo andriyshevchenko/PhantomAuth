@@ -4,7 +4,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { getSecretByTitle, resolveProfile, listSecrets, listProfiles } from './vault-resolver.js';
-import { callPlaywrightTool, disconnectPlaywright } from './playwright-client.js';
+import { fillField, typeIntoField, pressEnter, disconnectPlaywright } from './playwright-client.js';
 
 const PLAYWRIGHT_URL = process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:8931/mcp';
 
@@ -16,7 +16,7 @@ const server = new McpServer({
 // --- Tool: secure_fill ---
 server.tool(
   'secure_fill',
-  `Fill a form field with a secret value from SecureVault. The AI agent never sees the raw credential — only the secret's title is passed. The value is resolved from the OS keychain and sent directly to Playwright.`,
+  `Fill a form field with a secret value from SecureVault. The AI agent never sees the raw credential — only the secret's title is passed. The value is resolved from the OS keychain and sent directly to Playwright via JavaScript injection.`,
   {
     secretTitle: z.string().describe('The title/name of the secret in SecureVault (e.g. "Microsoft Email", "GitHub Token")'),
     selector: z.string().describe('CSS selector of the input field to fill (e.g. "input[name=email]", "#password")'),
@@ -24,10 +24,7 @@ server.tool(
   async ({ secretTitle, selector }) => {
     try {
       const value = await getSecretByTitle(secretTitle);
-      const result = await callPlaywrightTool(PLAYWRIGHT_URL, 'browser_fill_form', {
-        selector,
-        value,
-      });
+      await fillField(PLAYWRIGHT_URL, selector, value);
       return {
         content: [{ type: 'text', text: `✅ Filled "${selector}" with secret "${secretTitle}" (value hidden from agent)` }],
       };
@@ -43,7 +40,7 @@ server.tool(
 // --- Tool: secure_type ---
 server.tool(
   'secure_type',
-  `Type a secret value into a focused element or specified field. Unlike secure_fill, this simulates individual keystrokes. Use when fill doesn't work (e.g. React-controlled inputs).`,
+  `Type a secret value character-by-character into a form field. Unlike secure_fill, this simulates individual keystrokes via JavaScript events. Use when fill doesn't work (e.g. React-controlled inputs with strict validation).`,
   {
     secretTitle: z.string().describe('The title/name of the secret in SecureVault'),
     selector: z.string().optional().describe('Optional CSS selector. If omitted, types into the currently focused element'),
@@ -53,14 +50,10 @@ server.tool(
     try {
       const value = await getSecretByTitle(secretTitle);
 
-      // Type the secret value
-      const typeArgs = { text: value };
-      if (selector) typeArgs.selector = selector;
-      await callPlaywrightTool(PLAYWRIGHT_URL, 'browser_type', typeArgs);
+      await typeIntoField(PLAYWRIGHT_URL, selector, value);
 
-      // Optionally press Enter
       if (pressEnterAfter) {
-        await callPlaywrightTool(PLAYWRIGHT_URL, 'browser_press_key', { key: 'Enter' });
+        await pressEnter(PLAYWRIGHT_URL);
       }
 
       return {
@@ -102,17 +95,13 @@ server.tool(
         }
 
         if (step.action === 'fill') {
-          await callPlaywrightTool(PLAYWRIGHT_URL, 'browser_fill_form', {
-            selector: step.selector,
-            value: entry.value,
-          });
+          await fillField(PLAYWRIGHT_URL, step.selector, entry.value);
         } else {
-          const typeArgs = { text: entry.value, selector: step.selector };
-          await callPlaywrightTool(PLAYWRIGHT_URL, 'browser_type', typeArgs);
+          await typeIntoField(PLAYWRIGHT_URL, step.selector, entry.value);
         }
 
         if (step.pressEnterAfter) {
-          await callPlaywrightTool(PLAYWRIGHT_URL, 'browser_press_key', { key: 'Enter' });
+          await pressEnter(PLAYWRIGHT_URL);
         }
 
         if (step.waitMs) {
