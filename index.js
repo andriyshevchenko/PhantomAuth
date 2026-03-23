@@ -11,6 +11,36 @@ const PLAYWRIGHT_URL = process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:8931/
 const server = new McpServer({
   name: 'PhantomAuth',
   version: '0.1.0',
+}, {
+  instructions: `PhantomAuth fills web forms with credentials from SecureVault (OS keychain). AI agents NEVER see raw credential values — only secret titles are passed.
+
+## Tools
+- list_vault_secrets: List available secret titles. Call first to discover secrets.
+- list_vault_profiles: List authentication profiles with env var → secret mappings.
+- secure_fill(secretTitle, selector): Fill a form field with a vault secret. Use CSS selector for the target input.
+- secure_type(secretTitle, selector?, pressEnterAfter?): Type a secret character-by-character. Use when secure_fill doesn't trigger validation.
+- secure_authenticate(profileName, steps[]): Multi-step login from a profile. Each step: {selector, envVar, action, pressEnterAfter?, waitMs?}.
+- redacted_snapshot: Browser snapshot with all vault values replaced by [REDACTED]. Use INSTEAD of Playwright browser_snapshot when credentials may be on screen.
+
+## Login Workflow
+1. Navigate to login page (Playwright browser_navigate)
+2. Call list_vault_secrets to find credentials
+3. secure_fill the email/username field
+4. Click Next/Submit (Playwright browser_click)
+5. secure_fill the password field
+6. Click Sign In
+7. Handle MFA if prompted
+8. Verify with redacted_snapshot
+
+## Common Selectors
+Microsoft: email=input[name='loginfmt'] password=input[name='passwd']
+Google: email=input[type='email'] password=input[type='password']
+GitHub: login=input[name='login'] password=input[name='password']
+
+## Security
+- NEVER ask users for passwords — use vault secrets
+- NEVER log or display credential values
+- Always use redacted_snapshot when credentials may be visible`,
 });
 
 // --- Tool: secure_fill ---
