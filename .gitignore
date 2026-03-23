@@ -1,0 +1,15 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+node_modules
+
+# Editor directories and files
+.vscode/*
+.idea
+.DS_Store
+*.suo
+*.sw?
+
+.env

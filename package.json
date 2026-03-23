@@ -1,0 +1,48 @@
+{
+  "name": "@mcborov01/phantomauth",
+  "private": false,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "MCP server that fills web forms with secrets from SecureVault — AI agents never see raw credentials",
+  "keywords": [
+    "mcp",
+    "playwright",
+    "securevault",
+    "authentication",
+    "secrets",
+    "keychain",
+    "form-fill"
+  ],
+  "author": "andriyshevchenko",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andriyshevchenko/PhantomAuth.git"
+  },
+  "bin": {
+    "phantomauth": "./index.js"
+  },
+  "main": "index.js",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "keytar": "^7.9.0"
+  },
+  "files": [
+    "index.js",
+    "vault-resolver.js",
+    "playwright-client.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
