@@ -1,7 +1,7 @@
 {
   "name": "@mcborov01/phantomauth",
   "private": false,
-  "version": "2.8.24",
+  "version": "2.8.25",
   "type": "module",
   "description": "MCP server that fills web forms with secrets from SecureVault — AI agents never see raw credentials",
   "keywords": [

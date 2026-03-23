@@ -70,8 +70,7 @@ export async function fillField(url, selector, value) {
   const safeSelector = JSON.stringify(selector);
   const safeValue = JSON.stringify(value);
 
-  const js = `
-    (() => {
+  const js = `() => {
       const selector = ${safeSelector};
       const value    = ${safeValue};
       const el = document.querySelector(selector);
@@ -88,7 +87,7 @@ export async function fillField(url, selector, value) {
       document.execCommand('insertText', false, value);
 
       return 'filled';
-    })()`;
+    }`;
 
   await call(url, 'browser_evaluate', { function: js });
   return { content: [{ type: 'text', text: 'filled' }] };
@@ -107,8 +106,7 @@ export async function typeIntoField(url, selector, value) {
   let js;
   if (selector) {
     const safeSelector = JSON.stringify(selector);
-    js = `
-      (() => {
+    js = `() => {
         const selector = ${safeSelector};
         const value    = ${safeValue};
         const el = document.querySelector(selector);
@@ -122,10 +120,9 @@ export async function typeIntoField(url, selector, value) {
         document.execCommand('insertText', false, value);
 
         return 'typed';
-      })()`;
+      }`;
   } else {
-    js = `
-      (() => {
+    js = `() => {
         const el = document.activeElement;
         if (!el) throw new Error('No focused element to type into');
 
@@ -135,7 +132,7 @@ export async function typeIntoField(url, selector, value) {
         document.execCommand('insertText', false, value);
 
         return 'typed';
-      })()`;
+      }`;
   }
 
   await call(url, 'browser_evaluate', { function: js });
