@@ -3,10 +3,10 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { getSecretByTitle, resolveProfile, listSecrets, listProfiles } from './vault-resolver.js';
-import { fillField, typeIntoField, pressEnter, disconnectPlaywright } from './playwright-client.js';
+import { disconnectPlaywright, fillField, pressEnter, typeIntoField } from './playwright-client.js';
+import { getSecretByTitle, listProfiles, listSecrets, resolveProfile } from './vault-resolver.js';
 
-const PLAYWRIGHT_URL = process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:8931/mcp';
+const PLAYWRIGHT_URL = process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:65533';
 
 const server = new McpServer({
   name: 'PhantomAuth',
