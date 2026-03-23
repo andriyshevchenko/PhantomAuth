@@ -89,3 +89,20 @@ List profiles and their env var → secret mappings.
 ## License
 
 MIT
+
+## AI Agent Skills
+
+PhantomAuth includes instruction files that teach AI agents how to use the tools:
+
+| File | Agent | Description |
+|------|-------|-------------|
+| `.github/copilot-instructions.md` | GitHub Copilot | Custom instructions loaded automatically by Copilot |
+| `.claude/skills/phantomauth.md` | Claude Code | Skill file discovered by Claude Code |
+| `SKILL.md` | Universal | Cross-agent skill file (agentskills.io format) |
+
+### Using with agentskills CLI
+
+```bash
+npx agentskills export --target copilot
+npx agentskills export --target claude
+```
