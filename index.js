@@ -3,7 +3,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { disconnectPlaywright, fillField, pressEnter, typeIntoField } from './playwright-client.js';
+import { disconnectPlaywright, fillField, pressEnter, redactedSnapshot, typeIntoField } from './playwright-client.js';
 import { getSecretByTitle, listProfiles, listSecrets, resolveProfile } from './vault-resolver.js';
 
 const PLAYWRIGHT_URL = process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:8931/mcp';
@@ -160,6 +160,37 @@ server.tool(
       return { content: [{ type: 'text', text: text }] };
     } catch (err) {
       return { content: [{ type: 'text', text: `❌ Failed to list profiles: ${err.message}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: redacted_snapshot ---
+server.tool(
+  'redacted_snapshot',
+  'Take a browser snapshot with all vault secret values automatically redacted. Use this instead of Playwright browser_snapshot when sensitive data may be visible on screen.',
+  {},
+  async () => {
+    try {
+      // Collect all secret values from the vault
+      const allSecrets = await listSecrets();
+      const secretValues = [];
+      for (const s of allSecrets) {
+        try {
+          const value = await getSecretByTitle(s.title);
+          if (value) secretValues.push(value);
+        } catch { /* skip unresolvable secrets */ }
+      }
+
+      const result = await redactedSnapshot(PLAYWRIGHT_URL, secretValues);
+
+      // Extract text content from the result
+      const text = result.content?.map(c => c.text).join('\n') || JSON.stringify(result);
+      return { content: [{ type: 'text', text }] };
+    } catch (err) {
+      return {
+        content: [{ type: 'text', text: `❌ Redacted snapshot failed: ${err.message}` }],
+        isError: true,
+      };
     }
   }
 );

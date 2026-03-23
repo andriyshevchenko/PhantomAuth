@@ -150,6 +150,29 @@ export async function pressEnter(url) {
 }
 
 /**
+ * Take a browser snapshot and redact all vault secret values from the response.
+ * @param {string} mcpUrl - Playwright MCP server URL
+ * @param {string[]} secretValues - Array of secret values to redact
+ * @returns {object} - The snapshot result with all secret values replaced by "[REDACTED]"
+ */
+export async function redactedSnapshot(mcpUrl, secretValues) {
+  const result = await call(mcpUrl, 'browser_snapshot', {});
+
+  // Deep-clone and redact all secret values from all text content
+  const resultStr = JSON.stringify(result);
+  let redacted = resultStr;
+  for (const secret of secretValues) {
+    if (secret && secret.length > 0) {
+      // Escape regex special chars in the secret
+      const escaped = secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      redacted = redacted.replace(new RegExp(escaped, 'g'), '[REDACTED]');
+    }
+  }
+
+  return JSON.parse(redacted);
+}
+
+/**
  * Close the MCP client connection.
  */
 export async function disconnectPlaywright() {
