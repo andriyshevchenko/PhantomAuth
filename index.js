@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { disconnectPlaywright, fillField, pressEnter, typeIntoField } from './playwright-client.js';
 import { getSecretByTitle, listProfiles, listSecrets, resolveProfile } from './vault-resolver.js';
 
-const PLAYWRIGHT_URL = process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:65533';
+const PLAYWRIGHT_URL = process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:8931/mcp';
 
 const server = new McpServer({
   name: 'PhantomAuth',
