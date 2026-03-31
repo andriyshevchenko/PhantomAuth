@@ -59,6 +59,7 @@ Export a PhantomAuth skill or instructions file into the current project so AI a
   - `copilot` → `.github/copilot-instructions.md` (loaded automatically by GitHub Copilot)
   - `claude` → `.claude/skills/phantomauth.md` (discovered automatically by Claude Code)
   - `universal` → `SKILL.md` (cross-agent format)
+- `overwrite` (optional, default `false`): Set to `true` to replace an existing file. By default the tool returns an error if the destination already exists.
 
 ## Recommended Workflow for Web Login
 

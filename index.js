@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { access, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -242,8 +242,11 @@ server.tool(
       '"claude" → .claude/skills/phantomauth.md, ' +
       '"universal" → SKILL.md'
     ),
+    overwrite: z.boolean().optional().default(false).describe(
+      'Whether to overwrite an existing file. Defaults to false — returns an error if the destination already exists.'
+    ),
   },
-  async ({ target }) => {
+  async ({ target, overwrite }) => {
     try {
       const targets = {
         copilot: {
@@ -268,24 +271,36 @@ server.tool(
 
       const config = targets[target];
 
-      if (!existsSync(config.src)) {
+      // Verify source exists
+      try {
+        await access(config.src);
+      } catch {
         return {
           content: [{ type: 'text', text: `❌ Source file not found: ${config.src}` }],
           isError: true,
         };
       }
 
-      const destDir = dirname(config.dest);
-      if (!existsSync(destDir)) {
-        mkdirSync(destDir, { recursive: true });
+      // Check if destination already exists
+      let destExists = false;
+      try {
+        await access(config.dest);
+        destExists = true;
+      } catch { /* does not exist — proceed */ }
+
+      if (destExists && !overwrite) {
+        return {
+          content: [{ type: 'text', text: `❌ "${config.dest}" already exists. Pass overwrite: true to replace it.` }],
+          isError: true,
+        };
       }
 
-      const overwritten = existsSync(config.dest);
-      const content = readFileSync(config.src, 'utf-8');
-      writeFileSync(config.dest, content, 'utf-8');
+      await mkdir(dirname(config.dest), { recursive: true });
+      const content = await readFile(config.src, 'utf-8');
+      await writeFile(config.dest, content, 'utf-8');
 
       const lines = [`✅ ${config.name} exported to: ${config.dest}`];
-      if (overwritten) lines.push('(existing file was overwritten)');
+      if (destExists) lines.push('(existing file was overwritten)');
       lines.push(config.hint);
 
       return { content: [{ type: 'text', text: lines.join('\n') }] };
