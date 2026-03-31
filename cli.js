@@ -76,7 +76,7 @@ if (command === 'export-skill') {
     console.log('Use with agentskills CLI: npx agentskills export --target <agent>');
   }
 
-} else if (!command || command === '--help' || command === '-h') {
+} else if (command === '--help' || command === '-h') {
   console.log('PhantomAuth — Secure Browser Authentication for AI Agents');
   console.log('');
   console.log('Usage:');
@@ -90,8 +90,16 @@ if (command === 'export-skill') {
   console.log('');
   console.log('When run without arguments, starts the MCP stdio server.');
 
-} else {
-  // Default: start the MCP server (import index.js)
-  // This handles the case where phantomauth is run without export-skill
+} else if (command === undefined) {
+  // No arguments: start the MCP stdio server.
   await import('./index.js');
+} else {
+  // Unknown command: report the error on stderr and exit non-zero without writing to stdout.
+  console.error(`Unknown command: "${command}"`);
+  console.error('');
+  console.error('Usage:');
+  console.error('  phantomauth                    Start the MCP server (stdio)');
+  console.error('  phantomauth export-skill <t>   Export skill file for an AI agent');
+  console.error('  phantomauth --help             Show this help message');
+  process.exit(1);
 }
