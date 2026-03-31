@@ -91,7 +91,7 @@ if (command === 'export-skill') {
   console.log('When run without arguments, starts the MCP stdio server.');
 
 } else {
-  // Default: start the MCP server (import index.js)
-  // This handles both the no-argument case and any unrecognized command.
+  // Default: start the MCP server (import index.js).
+  // Any argument that is not a known command is silently ignored and the server starts.
   await import('./index.js');
 }

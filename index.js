@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { disconnectPlaywright, fillField, pressEnter, redactedSnapshot, typeIntoField } from './playwright-client.js';
 import { getSecretByTitle, listProfiles, listSecrets, resolveProfile } from './vault-resolver.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const PLAYWRIGHT_URL = process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:8931/mcp';
 
@@ -21,6 +26,7 @@ const server = new McpServer({
 - secure_type(secretTitle, selector?, pressEnterAfter?): Type a secret character-by-character. Use when secure_fill doesn't trigger validation.
 - secure_authenticate(profileName, steps[]): Multi-step login from a profile. Each step: {selector, envVar, action, pressEnterAfter?, waitMs?}.
 - redacted_snapshot: Browser snapshot with all vault values replaced by [REDACTED]. Use INSTEAD of Playwright browser_snapshot when credentials may be on screen.
+- export_skill(target): Export a PhantomAuth skill/instructions file into the current project. Targets: copilot, claude, universal.
 
 ## Login Workflow
 1. Navigate to login page (Playwright browser_navigate)
@@ -219,6 +225,73 @@ server.tool(
     } catch (err) {
       return {
         content: [{ type: 'text', text: `❌ Redacted snapshot failed: ${err.message}` }],
+        isError: true,
+      };
+    }
+  }
+);
+
+// --- Tool: export_skill ---
+server.tool(
+  'export_skill',
+  `Export a PhantomAuth skill or instructions file into the current project directory so that AI agents can automatically load it. Copies the bundled skill file for the chosen target into the appropriate location relative to the current working directory.`,
+  {
+    target: z.enum(['copilot', 'claude', 'universal']).describe(
+      'The AI agent target to export the skill for. ' +
+      '"copilot" → .github/copilot-instructions.md, ' +
+      '"claude" → .claude/skills/phantomauth.md, ' +
+      '"universal" → SKILL.md'
+    ),
+  },
+  async ({ target }) => {
+    try {
+      const targets = {
+        copilot: {
+          src: join(__dirname, '.github', 'copilot-instructions.md'),
+          dest: join(process.cwd(), '.github', 'copilot-instructions.md'),
+          name: 'GitHub Copilot instructions',
+          hint: 'GitHub Copilot will automatically load these instructions for your project.',
+        },
+        claude: {
+          src: join(__dirname, '.claude', 'skills', 'phantomauth.md'),
+          dest: join(process.cwd(), '.claude', 'skills', 'phantomauth.md'),
+          name: 'Claude Code skill',
+          hint: 'Claude Code will automatically discover this skill file.',
+        },
+        universal: {
+          src: join(__dirname, 'SKILL.md'),
+          dest: join(process.cwd(), 'SKILL.md'),
+          name: 'Universal skill file',
+          hint: 'Use with agentskills CLI: npx agentskills export --target <agent>',
+        },
+      };
+
+      const config = targets[target];
+
+      if (!existsSync(config.src)) {
+        return {
+          content: [{ type: 'text', text: `❌ Source file not found: ${config.src}` }],
+          isError: true,
+        };
+      }
+
+      const destDir = dirname(config.dest);
+      if (!existsSync(destDir)) {
+        mkdirSync(destDir, { recursive: true });
+      }
+
+      const overwritten = existsSync(config.dest);
+      const content = readFileSync(config.src, 'utf-8');
+      writeFileSync(config.dest, content, 'utf-8');
+
+      const lines = [`✅ ${config.name} exported to: ${config.dest}`];
+      if (overwritten) lines.push('(existing file was overwritten)');
+      lines.push(config.hint);
+
+      return { content: [{ type: 'text', text: lines.join('\n') }] };
+    } catch (err) {
+      return {
+        content: [{ type: 'text', text: `❌ Failed to export skill: ${err.message}` }],
         isError: true,
       };
     }

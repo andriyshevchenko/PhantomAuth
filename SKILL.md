@@ -53,6 +53,13 @@ Take a browser snapshot with all vault secret values automatically redacted. Use
 - No parameters required
 - Returns: accessibility tree snapshot with all vault values replaced by `[REDACTED]`
 
+### `export_skill`
+Export a PhantomAuth skill or instructions file into the current project so AI agents can automatically load it.
+- `target` (required): One of `copilot`, `claude`, or `universal`
+  - `copilot` → `.github/copilot-instructions.md` (loaded automatically by GitHub Copilot)
+  - `claude` → `.claude/skills/phantomauth.md` (discovered automatically by Claude Code)
+  - `universal` → `SKILL.md` (cross-agent format)
+
 ## Recommended Workflow for Web Login
 
 1. **Navigate** to the login page using Playwright's `browser_navigate`
